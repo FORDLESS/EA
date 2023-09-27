@@ -92,8 +92,8 @@ namespace input
 namespace config
 {
 	DWORD aimbot_button = 111;
-	float aimbot_fov = 5.0f;
-	float aimbot_smooth = 5.0f;
+	float aimbot_fov = 10.0f;
+	float aimbot_smooth = 24.0f;
 	BOOL  aimbot_visibility_check = 1;
 	BOOL  visuals_enabled = 1;
 }

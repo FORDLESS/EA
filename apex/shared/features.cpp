@@ -1,5 +1,6 @@
 #include "shared.h"
 
+// The features namespace encapsulates the aimbot functionality.
 namespace features
 {
 	static C_Player m_previous_target = 0;
@@ -7,6 +8,7 @@ namespace features
 	static float    m_previous_target_visible_time  = 0;
 	static BOOL     m_previous_button = 0;
 
+	// Resets the previous state of the aimbot.
 	void reset(void)
 	{
 		m_previous_button = 0;
@@ -15,13 +17,16 @@ namespace features
 		m_previous_tick = 0;
 	}
 
+	// Forward declarations of internal functions.
 	static void     aimbot(C_Player local_player, C_Player target_player, float target_visible_time);
 	static C_Player get_best_target(C_Player local_player, float *visible_time);
 	static BOOL     get_target_angle(C_Player local_player, C_Player target_player, int bone_index, vec3 *vec_out);
 }
 
+// Main function to run the aimbot.
 void features::run(void)
 {
+	// Get the local player.
 	C_Player local_player = apex::teams::get_local_player();
 	if (local_player == 0)
 	{
@@ -29,9 +34,10 @@ void features::run(void)
 		return;
 	}
 
+	// Check if the aimbot button is pressed.
 	BOOL aimbot_button = apex::input::get_button_state(config::aimbot_button);
 
-
+	// Logic to reset the target if the aimbot button is pressed.
 	if (!m_previous_button && aimbot_button)
 	{
 		//
@@ -40,7 +46,7 @@ void features::run(void)
 		m_previous_target = 0;
 	}
 
-
+	//
 	if (m_previous_target)
 	{
 		if (!apex::player::is_valid(m_previous_target))
@@ -67,6 +73,7 @@ void features::run(void)
 		}
 	}
 
+	// Logic to select the best target to aim at.
 	float    target_visible_time = 0; 
 	C_Player target_player = m_previous_target;
 
@@ -83,14 +90,14 @@ void features::run(void)
 	m_previous_target_visible_time = target_visible_time;
 
 	//
-	// target not found
+	// target not found (Ekknod)
 	//
 	if (target_player == 0)
 	{
 		reset();
 		return;
 	}
-
+	// If the aimbot button is pressed, run the aimbot logic.
 	if (aimbot_button)
 	{
 		aimbot(local_player, target_player, target_visible_time);
@@ -98,8 +105,10 @@ void features::run(void)
 
 }
 
+// The aimbot logic to adjust the player's aim towards the target.
 static void features::aimbot(C_Player local_player, C_Player target_player, float target_visible_time)
 {
+	// Logic to determine the best angle to aim at the target.
 	BOOL best_angle_found = 0;
 
 	float best_fov = 360.0f;
@@ -132,6 +141,7 @@ static void features::aimbot(C_Player local_player, C_Player target_player, floa
 		return;
 	}
 
+	// Logic to adjust the player's aim based on the calculated angle.
 	float fov = math::get_fov(viewangles, aimbot_angle);
 	if (fov > config::aimbot_fov)
 	{
@@ -160,6 +170,7 @@ static void features::aimbot(C_Player local_player, C_Player target_player, floa
 	angles.y = viewangles.y - aimbot_angle.y;
 	angles.z = 0;
 	math::vec_clamp(&angles);
+	
 	if (qabs(angles.x) > 25.00f || qabs(angles.y) > 25.00f)
 	{
 		return;
@@ -229,6 +240,7 @@ static void features::aimbot(C_Player local_player, C_Player target_player, floa
 	}
 }
 
+// Function to determine the best target to aim at.
 static C_Player features::get_best_target(C_Player local_player, float *visible_time)
 {
 	C_Player best_target = 0;
@@ -292,8 +304,10 @@ static C_Player features::get_best_target(C_Player local_player, float *visible_
 	return best_target;
 }
 
+// Function to calculate the angle to aim at a target.
 static BOOL features::get_target_angle(C_Player local_player, C_Player target_player, int bone_index, vec3 *vec_out)
 {
+	// Logic to calculate the angle based on the target's position and velocity.
 	vec3 target_position;
 	if (!apex::player::get_bone_position(target_player, bone_index, &target_position))
 	{
