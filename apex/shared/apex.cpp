@@ -380,65 +380,78 @@ static BOOL apex::initialize(void)
 
 	if (netvar_status == 0)
 	{
+		// Scan the memory pattern to find the bullet speed and gravity.
 		temp_address = vm::scan_pattern_direct(apex_handle, apex_base, "\x75\x0F\xF3\x44\x0F\x10\xBF", "xxxxxxx", 7);
 		if (temp_address == 0)
 		{
 	#ifdef DEBUG
+			// Log an error message if the bullet speed/gravity pattern is not found.
 			LOG("[-] failed to find bullet speed / gravity\n");
 	#endif
 			goto cleanup;
 		}
 
+		// Read bullet gravity and speed values from the memory.
 		m_dwBulletGravity = vm::read_i32(apex_handle, temp_address + 0x02 + 0x05);
 		m_dwBulletSpeed = vm::read_i32(apex_handle, temp_address - 0x6D + 0x04);
 
+		// Check if the bullet gravity and speed values are valid.
 		if (m_dwBulletGravity == 0 || m_dwBulletSpeed == 0)
 		{
 	#ifdef DEBUG
+			// Log an error message if the bullet gravity/speed values are invalid.
 			LOG("[-] failed to find bullet m_dwBulletGravity/m_dwBulletSpeed\n");
 	#endif
 			goto cleanup;
 		}
 
-
+		// Scan the memory pattern to find the bullet muzzle.
 		temp_address = vm::scan_pattern_direct(apex_handle, apex_base,
 			"\xF3\x0F\x10\x91\x00\x00\x00\x00\x48\x8D\x04\x40", "xxxx????xxxx", 12);
 
 		if (temp_address == 0)
 		{
 	#ifdef DEBUG
+			// Log an error message if the bullet muzzle pattern is not found.
 			LOG("[-] failed to find bullet dwMuzzle\n");
 	#endif
 			goto cleanup;
 		}
 
+		// Read the muzzle value from the memory.
 		temp_address = temp_address + 0x04;
 		m_dwMuzzle = vm::read_i32(apex_handle, temp_address) - 0x4;
 
+		// Check if the muzzle value is valid.
 		if (m_dwMuzzle == (DWORD)-0x4)
 		{
 	#ifdef DEBUG
+			// Log an error message if the muzzle value is invalid.
 			LOG("[-] failed to find bullet dwMuzzle\n");
 	#endif
 			goto cleanup;
 		}
 
+		// Scan the memory pattern to find the visible time.
 		temp_address = vm::scan_pattern_direct(apex_handle, apex_base,
 			"\x48\x8B\xCE\x00\x00\x00\x00\x00\x84\xC0\x0F\x84\xBA\x00\x00\x00", "xxx?????xxxxxxxx", 16);
 		
 		if (temp_address == 0)
 		{
 	#ifdef DEBUG
+			// Log an error message if the visible time pattern is not found.
 			LOG("[-] failed to find dwVisibleTime\n");
 	#endif
 			goto cleanup;
 		}
 
+		// Read the visible time value from the memory.
 		temp_address = temp_address + 0x10;
 		m_dwVisibleTime = vm::read_i32(apex_handle, temp_address + 0x4);
 		if (m_dwVisibleTime == 0)
 		{
 	#ifdef DEBUG
+			// Log an error message if the visible time value is invalid.
 			LOG("[-] failed to find m_dwVisibleTime\n");
 	#endif
 			goto cleanup;
@@ -446,6 +459,7 @@ static BOOL apex::initialize(void)
 	}
 
 
+	// Check if netvar_status is initialized. If not, dump the netvars.
 	if (netvar_status == 0)
 	{
 		netvar_status = dump_netvars(m_GetAllClasses);
@@ -453,6 +467,7 @@ static BOOL apex::initialize(void)
 		if (netvar_status == 0)
 		{
 	#ifdef DEBUG
+		        // Log an error message if netvars dumping fails.
 			LOG("[-] failed to get netvars\n");
 	#endif
 			goto cleanup;
@@ -460,6 +475,7 @@ static BOOL apex::initialize(void)
 	}
 
 #ifdef DEBUG
+	// Log various debug information.
 	LOG("[+] IClientEntityList: %lx\n", IClientEntityList - apex_base);
 	LOG("[+] dwLocalPlayer: %lx\n", C_BasePlayer - apex_base);
 	LOG("[+] IInputSystem: %lx\n", IInputSystem - apex_base);
@@ -484,6 +500,7 @@ static BOOL apex::initialize(void)
 
 	return 1;
 cleanup:
+	// Cleanup process if any of the initialization steps fail.
 	if (apex_handle)
 	{
 		vm::close(apex_handle);
@@ -491,13 +508,17 @@ cleanup:
 	}
 	return 0;
 }
+
+// This section is an alternative initialization method for the Apex cheat.
 #else
 static BOOL apex::initialize(void)
 {
+	// Initialize base addresses and temporary address variables.
 	QWORD apex_base = 0;
 	PVOID apex_base_dump = 0;
 	QWORD temp_address = 0;
 
+	// Check if the Apex game process is already running.
 	if (apex_handle)
 	{
 		if (vm::running(apex_handle))
@@ -507,34 +528,40 @@ static BOOL apex::initialize(void)
 		apex_handle = 0;
 	}
 
+	// Open the Apex game process.
 	apex_handle = vm::open_process("r5apex.exe");
 	if (!apex_handle)
 	{
 #ifdef DEBUG
+		// Log an error message if the Apex game process is not found.
 		LOG("[-] r5apex.exe process not found\n");
 #endif
 		return 0;
 	}
 
+	// Get the base address of the Apex game process.
 	apex_base = vm::get_module(apex_handle, 0);
 	if (apex_base == 0)
 	{
 #ifdef DEBUG
+		// Log an error message if the base address is not found.
 		LOG("[-] r5apex.exe base address not found\n");
 #endif
 		goto cleanup;
 	}
 
-
+    	// Dump the module (code sections only) of the Apex game process.
 	apex_base_dump = vm::dump_module(apex_handle, apex_base, VM_MODULE_TYPE::CodeSectionsOnly);
 	if (apex_base_dump == 0)
 	{
 #ifdef DEBUG
+		// Log an error message if the module dump fails.
 		LOG("[-] r5apex.exe base dump failed\n");
 #endif
 		goto cleanup;
 	}
 
+	// ... (similar pattern scanning and address retrieval processes for various game parameters)
 	IClientEntityList = vm::scan_pattern(apex_base_dump, "\x4C\x8B\x15\x00\x00\x00\x00\x33\xF6", "xxx????xx", 9);
 	if (IClientEntityList == 0)
 	{
@@ -637,9 +664,10 @@ static BOOL apex::initialize(void)
 		goto cleanup2;
 	}
 
-
+    	// Check if netvar_status is initialized. If not, proceed with the initialization process.
 	if (netvar_status == 0)
 	{
+		// ... (similar pattern scanning and address retrieval processes for bullet speed, gravity, muzzle, etc.)
 		temp_address = vm::scan_pattern(apex_base_dump, "\x75\x0F\xF3\x44\x0F\x10\xBF", "xxxxxxx", 7);
 		if (temp_address == 0)
 		{
@@ -682,23 +710,26 @@ static BOOL apex::initialize(void)
 	#endif
 			goto cleanup2;
 		}
-
+        	// Scan the memory pattern to find the visible time.
 		temp_address = vm::scan_pattern(apex_base_dump,
 			"\x48\x8B\xCE\x00\x00\x00\x00\x00\x84\xC0\x0F\x84\xBA\x00\x00\x00", "xxx?????xxxxxxxx", 16);
 		
 		if (temp_address == 0)
 		{
 	#ifdef DEBUG
+			// Log an error message if the visible time pattern is not found.
 			LOG("[-] failed to find dwVisibleTime\n");
 	#endif
 			goto cleanup2;
 		}
 
+		// Read the visible time value from the memory.
 		temp_address = temp_address + 0x10;
 		m_dwVisibleTime = vm::read_i32(apex_handle, temp_address + 0x4);
 		if (m_dwVisibleTime == 0)
 		{
 	#ifdef DEBUG
+			// Log an error message if the visible time value is invalid.
 			LOG("[-] failed to find m_dwVisibleTime\n");
 	#endif
 			goto cleanup2;
@@ -706,10 +737,11 @@ static BOOL apex::initialize(void)
 	}
 
 
+	// Free the dumped module and reset the pointer.
 	vm::free_module(apex_base_dump);
 	apex_base_dump = 0;
 
-
+	// Check if netvar_status is initialized. If not, proceed with the initialization process.
 	if (netvar_status == 0)
 	{
 		netvar_status = dump_netvars(m_GetAllClasses);
@@ -717,12 +749,14 @@ static BOOL apex::initialize(void)
 		if (netvar_status == 0)
 		{
 	#ifdef DEBUG
+		        // Log an error message if netvars cannot be retrieved.
 			LOG("[-] failed to get netvars\n");
 	#endif
 			goto cleanup;
 		}
 	}
-
+	
+// Log various game parameters for debugging purposes.
 #ifdef DEBUG
 	LOG("[+] IClientEntityList: %lx\n", IClientEntityList - apex_base);
 	LOG("[+] dwLocalPlayer: %lx\n", C_BasePlayer - apex_base);
@@ -747,6 +781,8 @@ static BOOL apex::initialize(void)
 #endif
 
 	return 1;
+
+// Cleanup sections to free resources and handle errors.
 cleanup2:
 	if (apex_base_dump)
 	{
@@ -764,6 +800,7 @@ cleanup:
 }
 #endif
 
+// Function to dump a specific table from the game's memory.
 static int apex::dump_table(QWORD table, const char *name)
 {
 	for (DWORD i = 0; i < vm::read_i32(apex_handle, table + 0x10); i++) {
@@ -788,11 +825,13 @@ static int apex::dump_table(QWORD table, const char *name)
 	return 0;
 }
 
+// Function to dump netvars (network variables) from the game's memory.
 static BOOL apex::dump_netvars(QWORD GetAllClassesAddress)
 {
 	int counter = 0;
 	QWORD entry = GetAllClassesAddress;
 	while (entry) {
+		// ... (process to read and retrieve various netvars from the game's memory)
 		QWORD recv_table = vm::read_i64(apex_handle, entry + 0x18);
 		QWORD recv_name  = vm::read_i64(apex_handle, recv_table + 0x4C8);
 
