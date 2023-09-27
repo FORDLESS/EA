@@ -7,8 +7,10 @@
 //
 #define DIRECT_PATTERNS
 
+// Namespace for all apex-related functions and variables.
 namespace apex
 {
+	// Static variables for various game-related handles and offsets.
 	static vm_handle apex_handle       = 0;
 	static BOOL      netvar_status     = 0;
 
@@ -36,16 +38,19 @@ namespace apex
 	static int       m_iBoneMatrix     = 0;
 	static int       m_playerData      = 0;
 
+    	// Forward declarations of internal functions.
 	static BOOL initialize(void);
 	static BOOL dump_netvars(QWORD GetAllClassesAddress);
 	static int  dump_table(QWORD table, const char *name);
 }
 
+// Function to check if apex is running.
 BOOL apex::running(void)
 {
 	return apex::initialize();
 }
 
+// Function to reset all global variables to their default values.
 void apex::reset_globals(void)
 {
 	apex_handle       = 0;
@@ -72,6 +77,7 @@ void apex::reset_globals(void)
 	m_playerData      = 0;
 }
 
+// Function to get an entity based on its index.
 C_Entity apex::entity::get_entity(int index)
 {
 	index = index + 1;
@@ -79,11 +85,13 @@ C_Entity apex::entity::get_entity(int index)
 	return vm::read_i64(apex_handle, (index + IClientEntityList) - 0x280050);
 }
 
+// Function to get the local player.
 C_Player apex::teams::get_local_player(void)
 {
 	return vm::read_i64(apex_handle, C_BasePlayer);
 }
 
+// Function to get the game's sensitivity setting.
 float apex::engine::get_sensitivity(void)
 {
 	//
@@ -96,11 +104,13 @@ float apex::engine::get_sensitivity(void)
 	return 2.5f;
 }
 
+// Function to get the current game tick.
 DWORD apex::engine::get_current_tick(void)
 {
 	return vm::read_i32(apex_handle, IInputSystem + 0xcd8);
 }
 
+// Function to get the state of a button.
 BOOL apex::input::get_button_state(DWORD button)
 {
 	button = button + 1;
@@ -108,6 +118,7 @@ BOOL apex::input::get_button_state(DWORD button)
 	return (a0 >> (button & 31)) & 1;
 }
 
+// Function to simulate mouse movement.
 void apex::input::mouse_move(int x, int y)
 {
 	typedef struct
@@ -121,6 +132,7 @@ void apex::input::mouse_move(int x, int y)
 	vm::write(apex_handle, IInputSystem + 0x1DB0, &data, sizeof(data));
 }
 
+// Function to check if a player is valid.
 BOOL apex::player::is_valid(C_Player player_address)
 {
 	if (player_address == 0)
@@ -141,21 +153,25 @@ BOOL apex::player::is_valid(C_Player player_address)
 	return 1;
 }
 
+// Function to retrieve the time a player has been visible.
 float apex::player::get_visible_time(C_Player player_address)
 {
 	return vm::read_float(apex_handle, player_address + m_dwVisibleTime);
 }
 
+// Function to retrieve the team ID of a player.
 int apex::player::get_team_id(C_Player player_address)
 {
 	return vm::read_i32(apex_handle, player_address + m_iTeamNum);
 }
 
+// Function to retrieve the muzzle position of a player.
 BOOL apex::player::get_muzzle(C_Player player_address, vec3 *vec_out)
 {
 	return vm::read(apex_handle, player_address + m_dwMuzzle, vec_out, sizeof(vec3));
 }
 
+// Structure representing a 3x4 matrix.
 typedef struct
 {
 	unsigned char pad1[0xCC];
@@ -166,6 +182,7 @@ typedef struct
 	float z;
 } matrix3x4;
 
+// Function to retrieve the position of a specific bone in a player's skeleton.
 BOOL apex::player::get_bone_position(C_Player player_address, int index, vec3 *vec_out)
 {
 	QWORD bonematrix = vm::read_i64(apex_handle, player_address + m_iBoneMatrix);
@@ -192,16 +209,19 @@ BOOL apex::player::get_bone_position(C_Player player_address, int index, vec3 *v
 	return 1;
 }
 
+// Function to retrieve the velocity of a player.
 BOOL apex::player::get_velocity(C_Player player_address, vec3 *vec_out)
 {
 	return vm::read(apex_handle, player_address + m_vecAbsOrigin - 0xC, vec_out, sizeof(vec3));
 }
 
+// Function to retrieve the view angles of a player.
 BOOL apex::player::get_viewangles(C_Player player_address, vec2 *vec_out)
 {
 	return vm::read(apex_handle, player_address + m_iViewAngles - 0x10, vec_out, sizeof(vec2));
 }
 
+// Function to enable a glow effect on a player.
 void apex::player::enable_glow(C_Player player_address)
 {
 	vm::write_i32(apex_handle, player_address + 0x2C4, 1512990053);
@@ -212,33 +232,40 @@ void apex::player::enable_glow(C_Player player_address)
 	vm::write_float(apex_handle, player_address + 0x1D8, 0.000f);
 }
 
+// Function to retrieve the weapon a player is holding.
 C_Weapon apex::player::get_weapon(C_Player player_address)
 {
 	DWORD weapon_id = vm::read_i32(apex_handle, player_address + m_iWeapon) & 0xFFFF;
 	return entity::get_entity(weapon_id - 1);
 }
 
+// Function to retrieve the bullet speed of a weapon.
 float apex::weapon::get_bullet_speed(C_Weapon weapon_address)
 {
 	return vm::read_float(apex_handle, weapon_address + m_dwBulletSpeed);
 }
 
+// Function to retrieve the bullet gravity of a weapon.
 float apex::weapon::get_bullet_gravity(C_Weapon weapon_address)
 {
 	return vm::read_float(apex_handle, weapon_address + m_dwBulletGravity);
 }
 
+// Function to retrieve the zoom field of view of a weapon.
 float apex::weapon::get_zoom_fov(C_Weapon weapon_address)
 {
 	return vm::read_float(apex_handle, weapon_address + m_playerData + 0xb8);
 }
 
 #ifdef DIRECT_PATTERNS
+// Initialization function for the apex module.
 static BOOL apex::initialize(void)
 {
+	// Declare and initialize variables to store base addresses and temporary addresses.
 	QWORD apex_base = 0;
 	QWORD temp_address = 0;
 
+    	// Check if the apex_handle is already initialized and if the VM is running.	
 	if (apex_handle)
 	{
 		if (vm::running(apex_handle))
@@ -247,7 +274,8 @@ static BOOL apex::initialize(void)
 		}
 		apex_handle = 0;
 	}
-
+	
+   	 // Open the "r5apex.exe" process and get its handle.
 	apex_handle = vm::open_process("r5apex.exe");
 	if (!apex_handle)
 	{
@@ -256,7 +284,7 @@ static BOOL apex::initialize(void)
 #endif
 		return 0;
 	}
-
+	// Get the base address of the "r5apex.exe" module.
 	apex_base = vm::get_module(apex_handle, 0);
 	if (apex_base == 0)
 	{
@@ -265,7 +293,8 @@ static BOOL apex::initialize(void)
 #endif
 		goto cleanup;
 	}
-
+	
+	// Scan for the IClientEntityList pattern and retrieve its address.
 	IClientEntityList = vm::scan_pattern_direct(apex_handle, apex_base, "\x4C\x8B\x15\x00\x00\x00\x00\x33\xF6", "xxx????xx", 9);
 	if (IClientEntityList == 0)
 	{
@@ -286,7 +315,8 @@ static BOOL apex::initialize(void)
 		}
 		IClientEntityList = temp_address + 0x08;
 	}
-
+	
+	// Scan for the C_BasePlayer pattern and retrieve its address.
 	C_BasePlayer = vm::scan_pattern_direct(apex_handle, apex_base, "\x89\x41\x28\x48\x8B\x05\x00\x00\x00\x00\x48\x85\xC0", "xxxxxx????xxx", 13);
 	if (C_BasePlayer == 0)
 	{
@@ -310,7 +340,8 @@ static BOOL apex::initialize(void)
 		}
 		C_BasePlayer = temp_address;
 	}
-
+	
+	// Scan for the IInputSystem pattern and retrieve its address.
 	IInputSystem = vm::scan_pattern_direct(apex_handle, apex_base,
 		"\x48\x8B\x05\x00\x00\x00\x00\x48\x8D\x4C\x24\x20\xBA\x01\x00\x00\x00\xC7", "xxx????xxxxxxxxxxx", 18);
 
@@ -332,7 +363,8 @@ static BOOL apex::initialize(void)
 	}
 
 	IInputSystem = IInputSystem - 0x10;
-
+	
+	// Scan for the m_GetAllClasses pattern and retrieve its address.
 	m_GetAllClasses = vm::scan_pattern_direct(apex_handle, apex_base,
 		"\x48\x8B\x05\x00\x00\x00\x00\xC3\xCC\xCC\xCC\xCC\xCC\xCC\xCC\xCC\x48\x89\x74\x24\x20", "xxx????xxxxxxxxxxxxxx", 21);
 
@@ -354,6 +386,7 @@ static BOOL apex::initialize(void)
 		goto cleanup;
 	}
 
+	// Commented out code related to scanning for the sensitivity pattern.
 	/*
 	sensitivity = vm::scan_pattern_direct(apex_handle, apex_base,
 		"\x48\x8B\x05\x00\x00\x00\x00\xF3\x0F\x10\x3D\x00\x00\x00\x00\xF3\x0F\x10\x70\x68", "xxx????xxxx????xxxxx", 20);
