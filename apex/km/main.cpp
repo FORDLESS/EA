@@ -1,9 +1,13 @@
+// Include the shared header file which contains common declarations.
 #include "../shared/shared.h"
+
+// Global variable used by the floating-point library.
 int _fltused;
 
 //
 // used by vm.cpp
 //
+// Memory range variables used by vm.cpp.
 QWORD g_memory_range_low  = 0;
 QWORD g_memory_range_high = 0;
 
@@ -11,10 +15,12 @@ QWORD g_memory_range_high = 0;
 //
 // used by system_thread
 //
+// Variables used by the system thread.
 BOOL   gExitCalled   = 0;
 PVOID  gThreadObject = 0;
 HANDLE gThreadHandle = 0;
 
+// Structure definition for mouse input data.
 #pragma warning(disable : 4201)
 typedef struct _MOUSE_INPUT_DATA {
 	USHORT UnitId;
@@ -32,6 +38,7 @@ typedef struct _MOUSE_INPUT_DATA {
 	ULONG  ExtraInformation;
 } MOUSE_INPUT_DATA, *PMOUSE_INPUT_DATA;
 
+// Typedef for the mouse class service callback function.
 typedef VOID
 (*MouseClassServiceCallbackFn)(
 	PDEVICE_OBJECT DeviceObject,
@@ -40,6 +47,7 @@ typedef VOID
 	PULONG InputDataConsumed
 );
 
+// Structure definition for the mouse object.
 typedef struct _MOUSE_OBJECT
 {
 	PDEVICE_OBJECT              mouse_device;
@@ -47,8 +55,10 @@ typedef struct _MOUSE_OBJECT
 	BOOL                        use_mouse;
 } MOUSE_OBJECT, * PMOUSE_OBJECT;
 
+// Function declaration for opening the mouse.
 BOOL mouse_open(void);
 
+// Mouse class service callback function declaration.
 extern "C" VOID MouseClassServiceCallback(
 	PDEVICE_OBJECT DeviceObject,
 	PMOUSE_INPUT_DATA InputDataStart,
@@ -56,7 +66,10 @@ extern "C" VOID MouseClassServiceCallback(
 	PULONG InputDataConsumed
 );
 
+// Global mouse object.
 MOUSE_OBJECT gMouseObject;
+
+// External function pointers.
 extern "C" {
 	QWORD _KeAcquireSpinLockAtDpcLevel;
 	QWORD _KeReleaseSpinLockFromDpcLevel;
@@ -64,11 +77,13 @@ extern "C" {
 	QWORD _IoReleaseRemoveLockEx;
 };
 
+// Namespace for mouse-related functions.
 namespace mouse
 {
 	void move(long x, long y, unsigned short button_flags);
 }
 
+// Namespace for input functions.
 namespace input
 {
 	void mouse_move(int x, int y)
@@ -89,6 +104,7 @@ namespace input
 	*/
 }
 
+// Configuration variables.
 namespace config
 {
 	DWORD aimbot_button = 111;
@@ -98,8 +114,10 @@ namespace config
 	BOOL  visuals_enabled = 1;
 }
 
+// Sleep function for the kernel mode.
 static void NtSleep(DWORD milliseconds);
 
+// System thread function.
 NTSTATUS system_thread(void)
 {
 	apex::reset_globals();
@@ -111,6 +129,7 @@ NTSTATUS system_thread(void)
 	return STATUS_SUCCESS;
 }
 
+// Driver unload function.
 VOID
 DriverUnload(
 	_In_ struct _DRIVER_OBJECT* DriverObject
@@ -139,6 +158,7 @@ DriverUnload(
 	DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "[+] EC-APEX.sys is closed\n");
 }
 
+// Driver entry function.
 extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
 {
 	UNREFERENCED_PARAMETER(DriverObject);
@@ -185,7 +205,7 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 	return STATUS_SUCCESS;
 }
 
-
+// Function to reference an object by its name.
 extern "C" NTSYSCALLAPI
 NTSTATUS
 ObReferenceObjectByName(
@@ -199,8 +219,10 @@ ObReferenceObjectByName(
       __out PVOID *Object
   );
 
+// External pointer to the IO driver object type.
 extern "C" NTSYSCALLAPI POBJECT_TYPE* IoDriverObjectType;
 
+// Function to open the mouse.
 BOOL mouse_open(void)
 {
 	// https://github.com/nbqofficial/norsefire
@@ -292,6 +314,8 @@ BOOL mouse_open(void)
 }
 
 #define KeMRaiseIrql(a,b) *(b) = KfRaiseIrql(a)
+
+// Function to move the mouse.
 void mouse::move(long x, long y, unsigned short button_flags)
 {
 	KIRQL irql;
@@ -309,6 +333,7 @@ void mouse::move(long x, long y, unsigned short button_flags)
 	KeLowerIrql(irql);
 }
 
+// Sleep function.
 static void NtSleep(DWORD milliseconds)
 {
 	QWORD ms = milliseconds;
