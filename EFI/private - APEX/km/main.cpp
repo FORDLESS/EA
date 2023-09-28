@@ -1,3 +1,4 @@
+// Include the shared header file from the apex directory.
 #include "../../../apex/shared/shared.h"
 
 
@@ -11,20 +12,21 @@
 //
 // float support for drivers
 //
+// Global variable to support floating-point operations for drivers.
 int _fltused;
 
 //
 // used by vm.cpp
 //
+// Global variables used by vm.cpp to define memory range boundaries.
 QWORD g_memory_range_low  = 0;
 QWORD g_memory_range_high = 0;
 
 //
 // dynamic imports, used globally
 //
-//
-// dynamic imports, used globally
-//
+// External function declarations (dynamic imports) for interacting with the Windows Kernel.
+// These functions are likely imported from the Windows Kernel or other system libraries.
 extern "C" {
 	// ULONG (__cdecl *_DbgPrintEx)(ULONG, ULONG, PCSTR, ...);
 	QWORD _KeAcquireSpinLockAtDpcLevel;
@@ -92,9 +94,11 @@ extern "C" {
 	CCHAR _KeNumberProcessors;
 };
 
-
+// Data structures related to the PE (Portable Executable) format.
+// These structures are used to parse and manipulate PE files in memory.
 
 #ifdef _KERNEL_MODE
+// DOS .EXE header structure.
 typedef struct _IMAGE_DOS_HEADER {      // DOS .EXE header
     WORD   e_magic;                     // Magic number
     WORD   e_cblp;                      // Bytes on last page of file
@@ -117,6 +121,7 @@ typedef struct _IMAGE_DOS_HEADER {      // DOS .EXE header
     LONG   e_lfanew;                    // File address of new exe header
   } IMAGE_DOS_HEADER, *PIMAGE_DOS_HEADER;
 
+// PE file header structure.
 typedef struct _IMAGE_FILE_HEADER {
     WORD    Machine;
     WORD    NumberOfSections;
@@ -127,11 +132,13 @@ typedef struct _IMAGE_FILE_HEADER {
     WORD    Characteristics;
 } IMAGE_FILE_HEADER, *PIMAGE_FILE_HEADER;
 
+// Data directory structure within the PE format.
 typedef struct _IMAGE_DATA_DIRECTORY {
     DWORD   VirtualAddress;
     DWORD   Size;
 } IMAGE_DATA_DIRECTORY, *PIMAGE_DATA_DIRECTORY;
 
+// Optional header structure for 64-bit PE format.
 typedef struct _IMAGE_OPTIONAL_HEADER64 {
     WORD        Magic;
     BYTE        MajorLinkerVersion;
@@ -165,12 +172,14 @@ typedef struct _IMAGE_OPTIONAL_HEADER64 {
     IMAGE_DATA_DIRECTORY DataDirectory[16];
 } IMAGE_OPTIONAL_HEADER64, *PIMAGE_OPTIONAL_HEADER64;
 
+// NT headers structure for 64-bit PE format.
 typedef struct _IMAGE_NT_HEADERS64 {
     DWORD Signature;
     IMAGE_FILE_HEADER FileHeader;
     IMAGE_OPTIONAL_HEADER64 OptionalHeader;
 } IMAGE_NT_HEADERS64, *PIMAGE_NT_HEADERS64;
 
+// Section header structure within the PE format.
 typedef struct _IMAGE_SECTION_HEADER {
     BYTE    Name[8];
     union {
@@ -188,7 +197,10 @@ typedef struct _IMAGE_SECTION_HEADER {
 } IMAGE_SECTION_HEADER, *PIMAGE_SECTION_HEADER;
 #endif
 
+// Disable compiler warning for nameless struct/union.
 #pragma warning(disable : 4201)
+
+// Structure to represent mouse input data.
 typedef struct _MOUSE_INPUT_DATA {
 	USHORT UnitId;
 	USHORT Flags;
@@ -205,6 +217,7 @@ typedef struct _MOUSE_INPUT_DATA {
 	ULONG  ExtraInformation;
 } MOUSE_INPUT_DATA, *PMOUSE_INPUT_DATA;
 
+// Callback function type for mouse class service.
 typedef VOID
 (*MouseClassServiceCallbackFn)(
 	PDEVICE_OBJECT DeviceObject,
@@ -213,6 +226,7 @@ typedef VOID
 	PULONG InputDataConsumed
 );
 
+// Structure to represent a mouse object.
 typedef struct _MOUSE_OBJECT
 {
 	PDEVICE_OBJECT              mouse_device;
@@ -220,16 +234,21 @@ typedef struct _MOUSE_OBJECT
 	BOOL                        use_mouse;
 	QWORD                       target_routine;
 } MOUSE_OBJECT, * PMOUSE_OBJECT;
+
+// Global mouse object instance.
 MOUSE_OBJECT gMouseObject = {0,0,0,0};
 
-
+// Function to make the current thread sleep for a specified duration.
 static void NtSleep(DWORD milliseconds);
+
+// Namespace for mouse-related functions.
 namespace mouse
 {
 	static void move(long x, long y, unsigned short button_flags);
 	static BOOL open(void);
 }
 
+// Namespace for input-related functions.
 namespace input
 {
 	void mouse_move(int x, int y)
@@ -253,8 +272,8 @@ namespace input
 namespace config
 {
 	DWORD aimbot_button           = 111;
-	float aimbot_fov              = 5.0f;
-	float aimbot_smooth           = 5.0f;
+	float aimbot_fov              = 10.0f;
+	float aimbot_smooth           = 24.0f;
 	BOOL  aimbot_visibility_check = 1;
 	BOOL  visuals_enabled         = 1;
 
@@ -267,6 +286,7 @@ namespace config
 	DWORD invalid_hwid = 0;
 }
 
+// Various utility functions.
 static QWORD get_ntoskrnl_data_location(QWORD ntoskrnl);
 static void  clear_image_traces(QWORD efi_image_base);
 static void  get_physical_memory_ranges(QWORD *low, QWORD *high);
@@ -277,10 +297,13 @@ static QWORD GetProcAddressQ(QWORD base, PCSTR export_name);
 //
 // it never should return zero, in case it does because of potential typo, loop forever
 //
+
+// Macro to ensure that the address of an exported function is valid.
 #define EXPORT_ADDRESS2(var, name) \
 	*(QWORD*)&var = GetProcAddressQ((QWORD)ntoskrnl, name); \
 	if (var == 0) while (1) ; \
 
+// System thread function (commented out).
 /*
 NTSTATUS system_thread(void)
 {
@@ -306,12 +329,16 @@ NTSTATUS system_thread(void)
 	return STATUS_SUCCESS;
 }*/
 
+// DPC (Deferred Procedure Call) object.
 PKDPC dpc_object;
 
+// Include intrinsic functions header.
 #include <intrin.h>
 
+// Enumeration for kernel objects.
 enum _KOBJECTS
 {
+	// Various kernel object types.
     EventNotificationObject = 0,
     EventSynchronizationObject = 1,
     MutantObject = 2,
@@ -342,7 +369,7 @@ enum _KOBJECTS
     MaximumKernelObject = 27
 }; 
 
-
+// DPC routine function.
 void DpcRoutine(void)
 {
 	//
@@ -394,8 +421,10 @@ void DpcRoutine(void)
 	_KeInsertQueueDpc(dpc_object, 0, 0);
 }
 
+// Entry point for the driver.
 extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, void *efi_loader_base, void *efi_cfg)
 {
+	// Cast the efi_cfg pointer to an integer pointer and read configuration values.
 	int *cfg = (int*)efi_cfg;
 	config::aimbot_button = cfg[1];
 	config::aimbot_fov = (float)cfg[2];
@@ -406,13 +435,17 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, void *efi_loader_ba
 	config::time_end = cfg[8];
 	config::licence_type = cfg[9];
 	config::invalid_hwid = cfg[10];
+    // ... (other configuration values are set similarly)
 
+	// Get the base address of the ntoskrnl.exe module.
 	QWORD ntoskrnl = GetSystemBaseAddress(DriverObject, L"ntoskrnl.exe");
 	if (ntoskrnl == 0)
 	{
 		//
 		// crash (PAGE_FAULT), ntoskrnl.exe not found
 		//
+		// Crash the system if ntoskrnl.exe is not found.
+
 		*(int*)(0x10A0) = 0;
 	}
 
@@ -434,6 +467,7 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, void *efi_loader_ba
 		*(int*)(0x10A0) = 0;
 	}
 
+	// Initialize global variables and structures.
 	QWORD MmUnlockPreChargedPagedPoolAddress = 0;
 	QWORD processor_count=0;
 
@@ -516,13 +550,14 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, void *efi_loader_ba
 	dpc_object->Type = 19;
 	_KeInsertQueueDpc(dpc_object, 0, 0);
 
-
+	// Return success status.
 	return STATUS_SUCCESS;
 }
 
-
+// Function to get the address of a specified exported function from a module.
 static QWORD GetProcAddressQ(QWORD base, PCSTR export_name)
 {
+    // Implementation to find the address of the exported function.
 	QWORD a0;
 	DWORD a1[4];
 	
@@ -544,8 +579,10 @@ static QWORD GetProcAddressQ(QWORD base, PCSTR export_name)
 	return 0;
 }
 
+// Function to clear traces of the image from memory.
 static void clear_image_traces(QWORD efi_image_base)
 {
+	// Implementation to clear the image traces.
 	QWORD km_base = 0;
 	{
 		IMAGE_DOS_HEADER *dos = (IMAGE_DOS_HEADER *)efi_image_base;
@@ -566,6 +603,7 @@ static void clear_image_traces(QWORD efi_image_base)
 	}
 }
 
+// Function to get the physical memory ranges.
 static void get_physical_memory_ranges(QWORD *low, QWORD *high)
 {
 	PPHYSICAL_MEMORY_RANGE memory_range = _MmGetPhysicalMemoryRanges();
@@ -585,8 +623,10 @@ static void get_physical_memory_ranges(QWORD *low, QWORD *high)
 	_ExFreePoolWithTag(memory_range, 'hPmM');
 }
 
+// Function to get the data location of ntoskrnl.
 static QWORD get_ntoskrnl_data_location(QWORD ntoskrnl)
 {
+	// Implementation to find the data location of ntoskrnl.
 	QWORD ntoskrnl_data_address = 0;
 
 	IMAGE_DOS_HEADER *hdr = (IMAGE_DOS_HEADER*)(ntoskrnl);
@@ -607,16 +647,20 @@ static QWORD get_ntoskrnl_data_location(QWORD ntoskrnl)
 	return ntoskrnl_data_address;
 }
 
+// Compares a sequence of bytes with a given mask.
 static BOOLEAN bDataCompare(const BYTE* pData, const BYTE* bMask, const char* szMask)
 {
+    // Iterate through the mask and compare bytes.
 	for (; *szMask; ++szMask, ++pData, ++bMask)
 		if ((*szMask == 1 || *szMask == 'x') && *pData != *bMask)
 			return 0;
 	return (*szMask) == 0;
 }
 
+// Searches for a pattern in a specified memory range.
 static QWORD FindPatternEx(UINT64 dwAddress, QWORD dwLen, BYTE *bMask, char * szMask)
 {
+    // Iterate through the memory range and use bDataCompare to find the pattern.	
 	if (dwLen <= 0)
 		return 0;
 	for (QWORD i = 0; i < dwLen; i++)
@@ -625,13 +669,16 @@ static QWORD FindPatternEx(UINT64 dwAddress, QWORD dwLen, BYTE *bMask, char * sz
 	return 0;
 }
 
+// Searches for a pattern within the sections of a module.
 static QWORD FindPattern(QWORD module, BYTE *bMask, CHAR *szMask, QWORD len, int counter)
 {
+	// Extract headers and sections from the module.
 	ULONG_PTR ret = 0;
 	PIMAGE_DOS_HEADER pidh = (PIMAGE_DOS_HEADER)module;
 	PIMAGE_NT_HEADERS pinh = (PIMAGE_NT_HEADERS)((BYTE*)pidh + pidh->e_lfanew);
 	PIMAGE_SECTION_HEADER pish = (PIMAGE_SECTION_HEADER)((BYTE*)pinh + sizeof(IMAGE_NT_HEADERS64));
 	
+	// Iterate through each section and search for the pattern.
 	for (USHORT sec = 0; sec < pinh->FileHeader.NumberOfSections; sec++)
 	{
 		
@@ -654,6 +701,7 @@ static QWORD FindPattern(QWORD module, BYTE *bMask, CHAR *szMask, QWORD len, int
 	return ret;
 }
 
+// Structure representing an entry in the loader data table.
 #pragma warning(disable : 4201)
 typedef struct _LDR_DATA_TABLE_ENTRY
 {
@@ -689,8 +737,10 @@ typedef struct _LDR_DATA_TABLE_ENTRY
 	LIST_ENTRY StaticLinks;
 } LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
 
+// Custom implementation of string comparison for wide strings.
 inline int wcscmp_imp(const unsigned short* s1, const unsigned short* s2)
 {
+    // Compare two wide strings character by character.
 	while (*s1 && (to_lower_imp(*s1) == to_lower_imp(*s2)))
 	{
 		s1++;
@@ -699,8 +749,10 @@ inline int wcscmp_imp(const unsigned short* s1, const unsigned short* s2)
 	return *(const unsigned short*)s1 - *(const unsigned short*)s2;
 }
 
+// Retrieves the base address of a system module.
 static QWORD GetSystemBaseAddress(PDRIVER_OBJECT DriverObject, const unsigned short* driver_name)
 {
+	// Iterate through the loader data table entries to find the module.
 	PLDR_DATA_TABLE_ENTRY ldr = (PLDR_DATA_TABLE_ENTRY)DriverObject->DriverSection;
 	for (PLIST_ENTRY pListEntry = ldr->InLoadOrderLinks.Flink; pListEntry != &ldr->InLoadOrderLinks; pListEntry = pListEntry->Flink)
 	{
@@ -713,23 +765,32 @@ static QWORD GetSystemBaseAddress(PDRIVER_OBJECT DriverObject, const unsigned sh
 	return 0;
 }
 
+// Function to initialize the mouse object by obtaining references to the MouClass and MouHID driver objects.
 static BOOL mouse::open(void)
 {
 	// https://github.com/nbqofficial/norsefire
 
+	// Check if the mouse object is already initialized.
 	if (gMouseObject.use_mouse == 0) {
+		
+		// Define the name of the MouClass driver.
 		UNICODE_STRING class_string;
 		_RtlInitUnicodeString(&class_string, L"\\Driver\\MouClass");
 		PDRIVER_OBJECT class_driver_object = NULL;
+		
+		// Obtain a reference to the MouClass driver object.
 		NTSTATUS status = _ObReferenceObjectByName(&class_string, OBJ_CASE_INSENSITIVE, NULL, 0, *_IoDriverObjectType, KernelMode, NULL, (PVOID*)&class_driver_object);
 		if (!NT_SUCCESS(status)) {
 			gMouseObject.use_mouse = 0;
 			return 0;
 		}
 
+		// Define the name of the MouHID driver.
 		UNICODE_STRING hid_string;
 		_RtlInitUnicodeString(&hid_string, L"\\Driver\\MouHID");
 		PDRIVER_OBJECT hid_driver_object = NULL;
+		
+		// Obtain a reference to the MouHID driver object.
 		status = _ObReferenceObjectByName(&hid_string, OBJ_CASE_INSENSITIVE, NULL, 0, *_IoDriverObjectType, KernelMode, NULL, (PVOID*)&hid_driver_object);
 		if (!NT_SUCCESS(status))
 		{
@@ -740,6 +801,7 @@ static BOOL mouse::open(void)
 			return 0;
 		}
 
+        // Search for the service callback function within the device extensions.
 		PVOID class_driver_base = NULL;
 		PDEVICE_OBJECT hid_device_object = hid_driver_object->DeviceObject;
 		while (hid_device_object && !gMouseObject.service_callback)
@@ -752,6 +814,7 @@ static BOOL mouse::open(void)
 					gMouseObject.mouse_device = class_device_object;
 				}
 
+                // Check the device extension for the service callback function.
 				PULONG_PTR device_extension = (PULONG_PTR)hid_device_object->DeviceExtension;
 				ULONG_PTR device_ext_size = ((ULONG_PTR)hid_device_object->DeviceObjectExtension - (ULONG_PTR)hid_device_object->DeviceExtension) / 4;
 				class_driver_base = class_driver_object->DriverStart;
@@ -769,6 +832,7 @@ static BOOL mouse::open(void)
 			hid_device_object = hid_device_object->AttachedDevice;
 		}
 	
+	    // If the mouse device is not found, search for it in the device list.
 		if (!gMouseObject.mouse_device)
 		{
 			PDEVICE_OBJECT target_device_object = class_driver_object->DeviceObject;
@@ -783,9 +847,11 @@ static BOOL mouse::open(void)
 			}
 		}
 
+        // Dereference the driver objects.
 		_ObfDereferenceObject(class_driver_object);
 		_ObfDereferenceObject(hid_driver_object);
 
+        // Update the mouse object's state.
 		if (gMouseObject.mouse_device && gMouseObject.service_callback) {
 			gMouseObject.use_mouse = 1;
 		}
@@ -793,16 +859,21 @@ static BOOL mouse::open(void)
 	return gMouseObject.mouse_device && gMouseObject.service_callback;
 }
 
+// External declaration of the MouseClassServiceCallback function.
 extern "C" VOID MouseClassServiceCallback(PDEVICE_OBJECT, PMOUSE_INPUT_DATA, PMOUSE_INPUT_DATA, PULONG);
 
+// Function to simulate mouse movement and button actions.
 static void mouse::move(long x, long y, unsigned short button_flags)
 {
+	// Prepare the mouse input data.
 	ULONG input_data = 0;
 	MOUSE_INPUT_DATA mid = { };
 	mid.LastX = x;
 	mid.LastY = y;
 	mid.ButtonFlags = button_flags;
 	mid.UnitId = 1;
+
+    // Call the service callback to simulate the mouse action.	
 	MouseClassServiceCallback(gMouseObject.mouse_device, &mid, (PMOUSE_INPUT_DATA)&mid + 1, &input_data);
 }
 
