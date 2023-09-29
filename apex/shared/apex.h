@@ -13,7 +13,7 @@
 #define LOG printf          // Define LOG macro as an alias for printf function for logging
 #endif
 
-// #define DEBUG
+#define DEBUG
 #define LOG(...) DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, __VA_ARGS__)
 
 // Define custom data types for game elements
