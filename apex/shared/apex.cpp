@@ -38,7 +38,7 @@ namespace apex
 	static int       m_iBoneMatrix     = 0;
 	static int       m_playerData      = 0;
 
-    	// Forward declarations of internal functions.
+    // Forward declarations of internal functions.
 	static BOOL initialize(void);
 	static BOOL dump_netvars(QWORD GetAllClassesAddress);
 	static int  dump_table(QWORD table, const char *name);
