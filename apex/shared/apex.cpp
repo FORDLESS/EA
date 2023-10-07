@@ -5,7 +5,7 @@
 // pros: no need system memory allocation
 // cons: performance is worse + function might fail in some cases.
 //
-#define DIRECT_PATTERNS
+//#define DIRECT_PATTERNS
 
 // Namespace for all apex-related functions and variables.
 namespace apex

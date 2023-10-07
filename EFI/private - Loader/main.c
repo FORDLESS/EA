@@ -273,20 +273,20 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTa
 
 
 
-		status = LoadFile(L"ECLicence.dat", &config, &config_size);
-		if (EFI_ERROR(status)) {	
-			Print(L"ECLicence.dat not found\n");
-			Print(L"Download licence at: https://ekknod.xyz/index.php?action=licence\n");
-			PressAnyKey();
-			return status;
-		}
-		if (config_size > 260)
-			config_size = 260;
+		//status = LoadFile(L"ECLicence.dat", &config, &config_size);
+		//if (EFI_ERROR(status)) {	
+		//	Print(L"ECLicence.dat not found\n");
+		//	Print(L"Download licence at: https://ekknod.xyz/index.php?action=licence\n");
+		//	PressAnyKey();
+		//	return status;
+		//}
+		//if (config_size > 260)
+		//	config_size = 260;
 
-		licence_length = (DWORD)config_size;
+		//licence_length = (DWORD)config_size;
 
-		MemCopy(registeration_key, config, config_size);
-		gBS->FreePool(config);
+		//MemCopy(registeration_key, config, config_size);
+		//gBS->FreePool(config);
 
 
 		status = LoadFile(L"apex.bin", &binary, &binary_size);
@@ -323,20 +323,20 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTa
 		gBS->FreePool(config);
 
 
-		status = LoadFile(L"ECLicence.dat", &config, &config_size);
-		if (EFI_ERROR(status)) {	
-			Print(L"ECLicence.dat not found\n");
-			Print(L"Download licence at: https://ekknod.xyz/index.php?action=licence\n");
-			PressAnyKey();
-			return status;
-		}
-		if (config_size > 260)
-			config_size = 260;
+		//status = LoadFile(L"ECLicence.dat", &config, &config_size);
+		//if (EFI_ERROR(status)) {	
+		//	Print(L"ECLicence.dat not found\n");
+		//	Print(L"Download licence at: https://ekknod.xyz/index.php?action=licence\n");
+		//	PressAnyKey();
+		//	return status;
+		//}
+		//if (config_size > 260)
+		//	config_size = 260;
 
-		licence_length = (DWORD)config_size;
+		//licence_length = (DWORD)config_size;
 
-		MemCopy(registeration_key, config, config_size);
-		gBS->FreePool(config);
+		//MemCopy(registeration_key, config, config_size);
+		//gBS->FreePool(config);
 
 		status = LoadFile(L"csgo.bin", &binary, &binary_size);
 		if (EFI_ERROR(status)) {

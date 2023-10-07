@@ -35,8 +35,8 @@ EFI_STATUS EFIAPI EfiMain(IN EFI_LOADED_IMAGE* LoadedImage, IN EFI_SYSTEM_TABLE*
 	gBS = SystemTable->BootServices;
 	gST = SystemTable;
 
-	void* licence_data = LoadedImage->reserved;
-	DWORD licence_length = LoadedImage->Revision;
+	//void* licence_data = LoadedImage->reserved;
+	//DWORD licence_length = LoadedImage->Revision;
 	int* config_values = LoadedImage->LoadOptions;
 	void* efi_image_base = LoadedImage->ImageBase;
 	QWORD efi_image_size = LoadedImage->ImageSize;
@@ -45,21 +45,21 @@ EFI_STATUS EFIAPI EfiMain(IN EFI_LOADED_IMAGE* LoadedImage, IN EFI_SYSTEM_TABLE*
 	g_efi_image_base = efi_image_base;
 	g_efi_image_size = efi_image_size;
 
-	DWORD licece_hwid = 0;
-	if (!GetLicenceInformation(licence_data, licence_length, &licece_hwid, 0, 0, 0))
-	{
-		return 0;
-	}
+	//DWORD licece_hwid = 0;
+	//if (!GetLicenceInformation(licence_data, licence_length, &licece_hwid, 0, 0, 0))
+	//{
+	//	return 1; //changed from 0 to 1 for bypass HHQ
+	//}
 
 	g_config_values[7] = 0;
 	g_config_values[8] = 0;
 	g_config_values[9] = 0;
 	g_config_values[10] = 0;
 
-	if (licece_hwid != GetCurrentHwid())
-	{
-		g_config_values[10] = 1;
-	}
+	//if (licece_hwid != GetCurrentHwid())
+	//{
+	//	g_config_values[10] = 0; //changed from 1 to 0 for bypass HHQ
+	//}
 
 	oExitBootServices = gBS->ExitBootServices;
 	gBS->ExitBootServices = ExitBootServicesHook;
@@ -239,7 +239,7 @@ EFI_STATUS EFIAPI ExitBootServicesHook(
 	 * calling GetMemoryMap will require you to allocate memory for the map itself,
 	 * which, in turn, will change the memory map.
 	 *
-	 * You can deal with this issue by looping your calls – allocating space for the map,
+	 * You can deal with this issue by looping your calls ï¿½ allocating space for the map,
 	 * then calling GetMemoryMap again. Eventually, you will have allocated enough space
 	 * for the (again updated) map before you make the GetMemoryMap call, and you'll get the up-to-date map.
 	*/
